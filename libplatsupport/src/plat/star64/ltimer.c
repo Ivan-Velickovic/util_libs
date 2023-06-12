@@ -11,6 +11,7 @@
 
 typedef struct {
     starfive_timer_t timer;
+    starfive_clk_t clk;
     irq_id_t timer_irq_id;
     ltimer_callback_fn_t user_callback;
     void *user_callback_token;
@@ -33,6 +34,11 @@ static pmem_region_t pmems[] = {
         .type = PMEM_TYPE_DEVICE,
         .base_addr = TIMER_BASE,
         .length = 0x10000
+    },
+    {
+        .type = PMEM_TYPE_DEVICE,
+        .base_addr = 0x13020000,
+        .length = 0x1000
     },
 };
 
@@ -90,6 +96,12 @@ int ltimer_default_init(ltimer_t *ltimer, ps_io_ops_t ops, ltimer_callback_fn_t 
         return EINVAL;
     }
 
+    starfive_ltimer->clk.vaddr = ps_pmem_map(&ops, pmems[1], false, PS_MEM_NORMAL);
+    if (starfive_ltimer->clk.vaddr == NULL) {
+        destroy(ltimer->data);
+        return EINVAL;
+    }
+
     starfive_timer_init(&starfive_ltimer->timer, 0);
 
     printf("get_time: %d\n", starfive_timer_get_time(&starfive_ltimer->timer));
@@ -98,6 +110,19 @@ int ltimer_default_init(ltimer_t *ltimer, ps_io_ops_t ops, ltimer_callback_fn_t 
     //     printf("get_time: %d\n", starfive_timer_get_time(&starfive_ltimer->timer));
     //     i++;
     // }
+
+    volatile uint32_t *apb_timer = starfive_ltimer->clk.vaddr + 0x1f0;
+    volatile uint32_t *clk_timer_0 = starfive_ltimer->clk.vaddr + 0x1f4;
+    volatile uint32_t *clk_timer_1 = starfive_ltimer->clk.vaddr + 0x1f8;
+    volatile uint32_t *clk_timer_2 = starfive_ltimer->clk.vaddr + 0x1fc;
+    volatile uint32_t *clk_timer_3 = starfive_ltimer->clk.vaddr + 0x200;
+
+    printf("Getting clk bits\n");
+    printf("APB_TIMER: 0x%x\n", *apb_timer);
+    printf("CLK_TIMER_0: 0x%x\n", *clk_timer_0);
+    printf("CLK_TIMER_1: 0x%x\n", *clk_timer_1);
+    printf("CLK_TIMER_2: 0x%x\n", *clk_timer_2);
+    printf("CLK_TIMER_3: 0x%x\n", *clk_timer_3);
 
     return 0;
 }

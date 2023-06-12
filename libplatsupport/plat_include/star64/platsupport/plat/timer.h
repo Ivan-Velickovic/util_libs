@@ -35,5 +35,9 @@ typedef struct {
     void *vaddr;
 } starfive_timer_t;
 
+typedef struct {
+    void *vaddr;
+} starfive_clk_t;
+
 int starfive_timer_init(starfive_timer_t *timer, uint64_t channel);
 uint32_t starfive_timer_get_time(starfive_timer_t *timer);
