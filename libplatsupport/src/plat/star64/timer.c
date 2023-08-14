@@ -4,7 +4,12 @@
 #include <stdlib.h>
 #include <platsupport/plat/timer.h>
 
-#define STARFIVE_TIMER_MAX_TICKS        0xffffffff
+#define CHANNEL_SIZE 0x40
+#define TIMER_MAX_TICKS 0xffffffff
+
+int starfive_handle_irq(starfive_timer_t *timer) {
+    timer->regs->intclr = 1;
+}
 
 int starfive_timer_init(starfive_timer_t *timer, uint64_t channel) {
     assert(timer);
@@ -13,7 +18,7 @@ int starfive_timer_init(starfive_timer_t *timer, uint64_t channel) {
         return EINVAL;
     }
 
-    timer->regs = timer->vaddr + 0x40 * channel;
+    timer->regs = timer->vaddr + CHANNEL_SIZE * channel;
 
     printf("timer->regs: 0x%p\n", timer->regs);
     printf("timer->regs->load: 0x%p\n", &timer->regs->load);
@@ -27,7 +32,7 @@ int starfive_timer_init(starfive_timer_t *timer, uint64_t channel) {
     /* Set the timer to continous mode */
     timer->regs->enable = 0;
     timer->regs->ctrl = 1;
-    timer->regs->load = STARFIVE_TIMER_MAX_TICKS;
+    // timer->regs->load = TIMER_MAX_TICKS;
     timer->regs->enable = 1;
 
     timer->regs->enable = 0;

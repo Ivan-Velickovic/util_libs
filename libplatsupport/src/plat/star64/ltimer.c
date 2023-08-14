@@ -11,7 +11,6 @@
 
 typedef struct {
     starfive_timer_t timer;
-    starfive_clk_t clk;
     irq_id_t timer_irq_id;
     ltimer_callback_fn_t user_callback;
     void *user_callback_token;
@@ -33,12 +32,7 @@ static pmem_region_t pmems[] = {
     {
         .type = PMEM_TYPE_DEVICE,
         .base_addr = TIMER_BASE,
-        .length = 0x10000
-    },
-    {
-        .type = PMEM_TYPE_DEVICE,
-        .base_addr = 0x13020000,
-        .length = 0x1000
+        .length = 0x10000 // @ivanv, only one page should be necessary
     },
 };
 
@@ -52,13 +46,26 @@ static int get_time(void *data, uint64_t *time)
     return 0;
 }
 
+static int handle_irq(void *data, ps_irq_t *irq)
+{
+    assert(data);
+    assert(irq);
+    starfive_ltimer_t *starfive_ltimer = (starfive_ltimer_t *) data;
+    starfive_handle_irq(&starfive_ltimer->timer);
+
+    return 0;
+}
+
 static int set_timeout(void *data, uint64_t ns, timeout_type_t type)
 {
+    // return starfive_set_timeout();
+    return 0;
 }
 
 static int reset(void *data)
 {
-    // just stop timer
+    // return starfive_reset();
+    return 0;
 }
 
 static void destroy(void *data)
@@ -68,7 +75,6 @@ static void destroy(void *data)
 
 int ltimer_default_init(ltimer_t *ltimer, ps_io_ops_t ops, ltimer_callback_fn_t callback, void *callback_token)
 {
-    printf("in ltimer_default_init!\n");
     assert(ltimer);
 
     ltimer->get_time = get_time;
@@ -96,11 +102,16 @@ int ltimer_default_init(ltimer_t *ltimer, ps_io_ops_t ops, ltimer_callback_fn_t 
         return EINVAL;
     }
 
-    starfive_ltimer->clk.vaddr = ps_pmem_map(&ops, pmems[1], false, PS_MEM_NORMAL);
-    if (starfive_ltimer->clk.vaddr == NULL) {
-        destroy(ltimer->data);
-        return EINVAL;
-    }
+    // starfive_ltimer->callback_data.ltimer = ltimer;
+    // starfive_ltimer->callback_data.irq_handler = handle_irq;
+    // starfive_ltimer->callback_data.irq = &irqs[0];
+
+    // starfive_ltimer->timer_irq_id = ps_irq_register(&ops.irq_ops, irqs[0], handle_irq_wrapper,
+    //                                                &starfive_ltimer->callback_data);
+    // if (starfive_ltimer->timer_irq_id < 0) {
+    //     destroy(ltimer->data);
+    //     return EIO;
+    // }
 
     starfive_timer_init(&starfive_ltimer->timer, 0);
 
@@ -113,19 +124,6 @@ int ltimer_default_init(ltimer_t *ltimer, ps_io_ops_t ops, ltimer_callback_fn_t 
         }
         i++;
     }
-
-    volatile uint32_t *apb_timer = starfive_ltimer->clk.vaddr + 0x1f0;
-    volatile uint32_t *clk_timer_0 = starfive_ltimer->clk.vaddr + 0x1f4;
-    volatile uint32_t *clk_timer_1 = starfive_ltimer->clk.vaddr + 0x1f8;
-    volatile uint32_t *clk_timer_2 = starfive_ltimer->clk.vaddr + 0x1fc;
-    volatile uint32_t *clk_timer_3 = starfive_ltimer->clk.vaddr + 0x200;
-
-    printf("Getting clk bits\n");
-    printf("APB_TIMER: 0x%x\n", *apb_timer);
-    printf("CLK_TIMER_0: 0x%x\n", *clk_timer_0);
-    printf("CLK_TIMER_1: 0x%x\n", *clk_timer_1);
-    printf("CLK_TIMER_2: 0x%x\n", *clk_timer_2);
-    printf("CLK_TIMER_3: 0x%x\n", *clk_timer_3);
 
     return 0;
 }
