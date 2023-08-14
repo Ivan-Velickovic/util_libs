@@ -21,11 +21,14 @@
 
 typedef struct {
     /* Registers */
+    uint32_t intstatus;
     uint32_t ctrl;
     uint32_t load;
+    uint32_t reserved1;
     uint32_t enable;
     uint32_t reload;
     uint32_t value;
+    uint32_t reserved2;
     uint32_t intclr;
     uint32_t intmask;
 } starfive_timer_regs_t;

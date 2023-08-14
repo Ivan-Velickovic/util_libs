@@ -104,12 +104,15 @@ int ltimer_default_init(ltimer_t *ltimer, ps_io_ops_t ops, ltimer_callback_fn_t 
 
     starfive_timer_init(&starfive_ltimer->timer, 0);
 
-    printf("get_time: %d\n", starfive_timer_get_time(&starfive_ltimer->timer));
+    printf("get_time: %u\n", starfive_timer_get_time(&starfive_ltimer->timer));
     int i = 0;
-    // while (i < 10000) {
-    //     printf("get_time: %d\n", starfive_timer_get_time(&starfive_ltimer->timer));
-    //     i++;
-    // }
+    while (true) {
+        if (i % 100000 == 0) {
+            printf("get_time: %u\n", starfive_timer_get_time(&starfive_ltimer->timer));
+            i = 0;
+        }
+        i++;
+    }
 
     volatile uint32_t *apb_timer = starfive_ltimer->clk.vaddr + 0x1f0;
     volatile uint32_t *clk_timer_0 = starfive_ltimer->clk.vaddr + 0x1f4;

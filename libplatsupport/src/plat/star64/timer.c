@@ -13,11 +13,26 @@ int starfive_timer_init(starfive_timer_t *timer, uint64_t channel) {
         return EINVAL;
     }
 
-    timer->regs = timer->vaddr + sizeof(starfive_timer_regs_t) * channel;
+    timer->regs = timer->vaddr + 0x40 * channel;
+
+    printf("timer->regs: 0x%p\n", timer->regs);
+    printf("timer->regs->load: 0x%p\n", &timer->regs->load);
+
+    assert(((uintptr_t)&timer->regs->load - (uintptr_t)timer->regs) == 0x08);
+    assert(((uintptr_t)&timer->regs->enable - (uintptr_t)timer->regs) == 0x10);
+    assert(((uintptr_t)&timer->regs->value - (uintptr_t)timer->regs) == 0x18);
+    printf("sizeof time->regs: 0x%lx\n", sizeof(timer->regs));
+    assert(sizeof(starfive_timer_regs_t) == 0x28);
 
     /* Set the timer to continous mode */
-    timer->regs->ctrl = 0;
+    timer->regs->enable = 0;
+    timer->regs->ctrl = 1;
     timer->regs->load = STARFIVE_TIMER_MAX_TICKS;
+    timer->regs->enable = 1;
+
+    timer->regs->enable = 0;
+    timer->regs->intclr = 1;
+    timer->regs->intmask = 0;
     timer->regs->enable = 1;
 
     return 0;
